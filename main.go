@@ -85,7 +85,7 @@ func lambdaHandler(inputEvent Request) (Response, error) {
 		return getResponse(fmt.Sprintf("unable to get file from '%s'", url), http.StatusBadRequest, err)
 	}
 
-	output, err := s3session.PutObject(&s3.PutObjectInput{
+	_, err = s3session.PutObject(&s3.PutObjectInput{
 		ACL:    aws.String(s3.BucketCannedACLPublicRead),
 		Body:   bytes.NewReader(fileBytes),
 		Bucket: aws.String(bucket),
@@ -101,7 +101,8 @@ func lambdaHandler(inputEvent Request) (Response, error) {
 		return getResponse("caught AWS error", http.StatusBadRequest, err)
 	}
 
-	return getResponse(output.String(), http.StatusOK, nil)
+	return getResponse(
+		fmt.Sprintf("https://%s.%s.amazonaws.com/%s", bucket, awsRegion, saveAs), http.StatusOK, nil)
 }
 
 func getFile(url string) ([]byte, error) {
