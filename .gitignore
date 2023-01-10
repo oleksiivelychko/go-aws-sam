@@ -3,3 +3,4 @@
 .aws-sam
 go-lambda*
 .env
+http-client.private.env.json
