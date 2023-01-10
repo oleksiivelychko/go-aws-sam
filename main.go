@@ -11,21 +11,24 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	awsSession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/sqs"
 	"io"
 	"net/http"
 )
 
 type InputEvent struct {
-	Bucket string `json:"bucket"`
-	Url    string `json:"url"`
-	SaveAs string `json:"saveAs"`
+	Bucket   string `json:"bucket"`
+	Url      string `json:"url"`
+	SaveAs   string `json:"saveAs"`
+	QueueUrl string `json:"queueUrl"`
 }
 
 type Request struct {
-	Bucket string `json:"bucket"`
-	Url    string `json:"url"`
-	SaveAs string `json:"saveAs"`
-	Body   string `json:"body"`
+	Bucket   string `json:"bucket"`
+	Url      string `json:"url"`
+	SaveAs   string `json:"saveAs"`
+	QueueUrl string `json:"queueUrl"`
+	Body     string `json:"body"`
 }
 
 type Response struct {
@@ -35,6 +38,7 @@ type Response struct {
 }
 
 var s3session *s3.S3
+var sqsSession *sqs.SQS
 var awsRegion string
 var awsAccessKeyId string
 var awsSecretAccessKeyId string
@@ -55,6 +59,7 @@ func init() {
 	}
 
 	s3session = s3.New(awsSession.Must(session, nil))
+	sqsSession = sqs.New(awsSession.Must(session, nil))
 }
 
 func main() {
@@ -65,6 +70,7 @@ func lambdaHandler(inputEvent Request) (Response, error) {
 	bucket := inputEvent.Bucket
 	url := inputEvent.Url
 	saveAs := inputEvent.SaveAs
+	queueUrl := inputEvent.QueueUrl
 
 	// data came through API Gateway POST request
 	if inputEvent.Body != "" {
@@ -74,6 +80,7 @@ func lambdaHandler(inputEvent Request) (Response, error) {
 		bucket = input.Bucket
 		url = input.Url
 		saveAs = input.SaveAs
+		queueUrl = input.QueueUrl
 	}
 
 	if bucket == "" || url == "" || saveAs == "" {
@@ -101,8 +108,33 @@ func lambdaHandler(inputEvent Request) (Response, error) {
 		return getResponse("caught AWS error", http.StatusBadRequest, err)
 	}
 
-	return getResponse(
-		fmt.Sprintf("https://%s.%s.amazonaws.com/%s", bucket, awsRegion, saveAs), http.StatusOK, nil)
+	s3Link := fmt.Sprintf("https://%s.%s.amazonaws.com/%s", bucket, awsRegion, saveAs)
+
+	if queueUrl != "" {
+		err = sendToQueue(url, s3Link)
+		if err != nil {
+			return getResponse("unable to put message into queue", http.StatusInternalServerError, err)
+		}
+	}
+
+	return getResponse(s3Link, http.StatusOK, nil)
+}
+
+func sendToQueue(link, s3Link string) error {
+	_, err := sqsSession.SendMessage(&sqs.SendMessageInput{
+		MessageAttributes: map[string]*sqs.MessageAttributeValue{
+			"Link": {
+				DataType:    aws.String("String"),
+				StringValue: aws.String(link),
+			},
+			"S3Link": {
+				DataType:    aws.String("String"),
+				StringValue: aws.String(s3Link),
+			},
+		},
+	})
+
+	return err
 }
 
 func getFile(url string) ([]byte, error) {
