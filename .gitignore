@@ -1,4 +1,4 @@
 .idea
 .run
 .aws-sam
-lambda*
+*.zip
