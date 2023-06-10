@@ -8,16 +8,36 @@ prepare-zip:
 		main.go
 	zip go-lambda.zip go-lambda
 
-awsSamCliSum := 1a7e99bfcf898a8dfff7032a729ac52c3482461936901fae215347087bf9000e
+awsSamCliSha256Sum := 420413bf2e399d0c3e27fab60bfd6af7c09550c654a4c99799c3acd8bf8820c1
 install-aws-sam: uninstall-aws-sam
-	rm AWS-SAM-CLI.pkg
 	wget -O AWS-SAM-CLI.pkg https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-macos-arm64.pkg
-	@shasum -a 256 AWS-SAM-CLI.pkg | awk '$$1=="1a7e99bfcf898a8dfff7032a729ac52c3482461936901fae215347087bf9000e"{print"Checksum matches!"}'
+	$(eval result=$(shell shasum -a 256 AWS-SAM-CLI.pkg |\
+		awk '$$1=="$(awsSamCliSha256Sum)" {print "Checksum match.";} $$1!="$(awsSamCliSha256Sum)" {print "Checksum mismatch!";}'))
+	@echo ${result}
+	@if [ "${result}" = "Checksum mismatch!" ]; then\
+    	exit;\
+    fi;\
+    rm AWS-SAM-CLI.pkg
 	sudo -S installer -pkg AWS-SAM-CLI.pkg -target /
 	sam --version
 
 uninstall-aws-sam:
+	rm -f AWS-SAM-CLI.pkg
 	which sam
 	ls -l /usr/local/bin/sam
 	sudo -S rm /usr/local/bin/sam
 	sudo -S rm -rf /usr/local/aws-sam-cli
+
+install-aws-cli: uninstall-aws-cli
+	curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+	sudo -S installer -pkg AWSCLIV2.pkg -target /
+	rm AWSCLIV2.pkg
+	aws --version
+
+uninstall-aws-cli:
+	rm -f AWSCLIV2.pkg
+	which aws
+	ls -l /usr/local/bin/aws
+	sudo -S rm /usr/local/bin/aws
+	sudo -S rm /usr/local/bin/aws_completer
+	sudo -S rm -rf /usr/local/aws-cli
