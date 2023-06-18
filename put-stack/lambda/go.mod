@@ -1,4 +1,4 @@
-module lambda
+module lambda-put-message
 
 go 1.20
 
