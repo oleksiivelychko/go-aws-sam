@@ -50,7 +50,7 @@ delete-config:
 invoke:
 	aws lambda invoke --function-name put-message \
 		--cli-binary-format raw-in-base64-out \
-		--payload '{"queue": "000000000000/my-queue"}'
+		--payload '{"queue": "000000000000/my-queue"}' \
 		--endpoint-url=http://localhost:4566 --profile localstack outfile.json
 
 post:
