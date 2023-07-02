@@ -18,11 +18,22 @@ func main() {
 }
 
 func printMessage(message events.SQSMessage) {
+	attr, ok := message.MessageAttributes["MyAttr"]
+	if ok {
+		fmt.Printf(
+			"\nMessage ID %s for event source %s contains body `%s` with attribute 'MyAttr'=`%s`\n",
+			message.MessageId,
+			message.EventSource,
+			message.Body,
+			*attr.StringValue,
+		)
+		return
+	}
+
 	fmt.Printf(
-		"\nMessage ID %s for event source %s contains body %s with attribute `MyAttr`=%s\n",
+		"\nMessage ID %s for event source %s contains body `%s`\n",
 		message.MessageId,
 		message.EventSource,
 		message.Body,
-		*message.MessageAttributes["MyAttr"].StringValue,
 	)
 }
