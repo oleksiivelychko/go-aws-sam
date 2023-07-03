@@ -4,3 +4,4 @@
 handler-bin
 *.zip
 volume
+outfile.*
