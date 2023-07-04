@@ -1,5 +1,8 @@
 include ../.env
 
+sam-init:
+	sam init --runtime go1.x
+
 sam-build:
 	sam build
 
