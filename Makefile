@@ -1,7 +1,9 @@
+# https://github.com/aws/aws-sam-cli/releases/
+awsSamCliSha256Sum := 2ed4e2bc28e254ee106e7642aa987573961516a2fef737f43b82c2674c44036e
+
 download-aws-sam:
 	wget -O AWS-SAM-CLI.pkg https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-macos-arm64.pkg
 
-awsSamCliSha256Sum := 70a5583160398391cdf0dd5d946448bc36c078d72465ac7c095ad1f56190c707
 install-aws-sam:
 	$(eval result=$(shell shasum -a 256 AWS-SAM-CLI.pkg |\
 		awk '$$1=="$(awsSamCliSha256Sum)" {print "Checksum match.";} $$1!="$(awsSamCliSha256Sum)" {print "Checksum mismatch!";}'))
