@@ -1,5 +1,4 @@
 .idea
-.run
 .aws-sam
 handler-bin
 *.zip
