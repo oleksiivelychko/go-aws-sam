@@ -7,6 +7,7 @@ create: build
         --runtime go1.x \
         --zip-file fileb://lambda.zip \
         --handler handler-bin \
+        --memory-size 128 \
         --role arn:aws:iam::000000000000:role/lambda-role \
     	--endpoint-url=http://localhost:4566 --profile localstack
 
