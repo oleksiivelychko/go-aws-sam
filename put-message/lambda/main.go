@@ -18,7 +18,7 @@ type Event struct {
 }
 
 type Response struct {
-	Content    string `json:"content"`
+	Body       string `json:"body"`
 	StatusCode int    `json:"statusCode"`
 }
 
@@ -30,6 +30,10 @@ var (
 )
 
 func handler(event Event) (Response, error) {
+	if event.Queue == "" {
+		return response("", http.StatusBadRequest, errors.New("got empty SQS name"))
+	}
+
 	if awsRegion == "" {
 		awsRegion = os.Getenv("AWS_REGION")
 		if awsRegion == "" {
@@ -71,10 +75,6 @@ func handler(event Event) (Response, error) {
 
 	sqsSession := sqs.New(session.Must(awsSession, nil))
 
-	if event.Queue == "" {
-		return response("", http.StatusBadRequest, errors.New("got empty SQS name"))
-	}
-
 	queue := fmt.Sprintf("%s/%s", awsEndpoint, event.Queue)
 
 	err = sendToQueue(sqsSession, queue)
@@ -106,7 +106,7 @@ func sendToQueue(sqsSession *sqs.SQS, queueURL string) error {
 
 func response(content string, status int, err error) (Response, error) {
 	return Response{
-		Content:    content,
+		Body:       content,
 		StatusCode: status,
 	}, err
 }
