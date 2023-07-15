@@ -1,7 +1,5 @@
-sam-build:
+invoke:
 	sam build
-
-sam-invoke: sam-build
 	sam local invoke
 
 zip:
