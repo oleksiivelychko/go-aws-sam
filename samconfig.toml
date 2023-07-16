@@ -4,7 +4,7 @@ version = 0.1
 
 [default]
 [default.global.parameters]
-stack_name = "put-message"
+stack_name = "gp-aws-sam"
 
 [default.build.parameters]
 cached = true
