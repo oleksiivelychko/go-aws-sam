@@ -75,14 +75,14 @@ func handler(event Event) (Response, error) {
 
 	sqsSession := sqs.New(session.Must(awsSession, nil))
 
-	queue := fmt.Sprintf("%s/%s", awsEndpoint, event.Queue)
+	queueURL := fmt.Sprintf("%s/%s", awsEndpoint, event.Queue)
 
-	err = sendToQueue(sqsSession, queue)
+	err = sendToQueue(sqsSession, queueURL)
 	if err != nil {
-		return response("unable to put message in queue", http.StatusInternalServerError, err)
+		return response("unable to put message", http.StatusInternalServerError, err)
 	}
 
-	return response("successfully put message in queue", http.StatusOK, nil)
+	return response(fmt.Sprintf("successfully put message by QueueUrl: %s", queueURL), http.StatusOK, nil)
 }
 
 func main() {

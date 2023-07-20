@@ -18,7 +18,7 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("Successful request", func(t *testing.T) {
-		_, err := handler(Event{Queue: "000000000000/my-queue"})
+		_, err := handler(Event{Queue: "000000000000/MyQueue"})
 		if err != nil {
 			t.Fatalf("Everything should be ok, but %s", err)
 		}
