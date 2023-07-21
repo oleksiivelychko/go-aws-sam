@@ -28,3 +28,8 @@ zip pop-message.zip handler-bin
 ```
 aws logs tail /aws/lambda/pop-message --follow --endpoint-url=http://localhost:4566 --profile localstack
 ```
+---
+
+- create IDE configuration to run/debug:
+![SAM IDE configuration](sam_ide_run_configuration.png)
+---
