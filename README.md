@@ -14,3 +14,5 @@ sam init --runtime go1.x
 ```
 
 🐞 Debugging SAM on Apple M1 has bug https://github.com/aws/aws-toolkit-jetbrains/issues/3061
+
+![Invoked Lambda via SAM from IDE](social_preview.png)
