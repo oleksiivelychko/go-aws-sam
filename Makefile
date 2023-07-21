@@ -1,5 +1,5 @@
 # https://github.com/aws/aws-sam-cli/releases/
-awsSamCliSha256Sum := 2ed4e2bc28e254ee106e7642aa987573961516a2fef737f43b82c2674c44036e
+awsSamCliSha256Sum := aa808f9af5b53c81c2fd256c2a2592353e9fcbee7545e9397b8d46bfc3d49851
 
 download-aws-sam:
 	wget -O AWS-SAM-CLI.pkg https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-macos-arm64.pkg
