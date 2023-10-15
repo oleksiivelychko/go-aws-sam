@@ -15,13 +15,13 @@ import (
 	"time"
 )
 
-type Event struct {
+type event struct {
 	Queue string `json:"queue"`
 }
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	var event Event
-	err := json.Unmarshal([]byte(request.Body), &event)
+	var e event
+	err := json.Unmarshal([]byte(request.Body), &e)
 	if err != nil {
 		return response(err.Error(), http.StatusInternalServerError, nil)
 	}
@@ -46,27 +46,27 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		return response("got empty AWS_ENDPOINT", http.StatusBadRequest, nil)
 	}
 
-	config := &aws.Config{
+	awsCfg := &aws.Config{
 		Region:      aws.String(awsRegion),
 		Credentials: credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, ""),
 	}
 
 	if awsEndpoint != "" {
-		config.Endpoint = aws.String(awsEndpoint)
+		awsCfg.Endpoint = aws.String(awsEndpoint)
 	}
 
-	awsSession, err := session.NewSession(config)
+	awsSession, err := session.NewSession(awsCfg)
 	if err != nil {
 		panic(err)
 	}
 
 	sqsSession := sqs.New(session.Must(awsSession, nil))
 
-	if event.Queue == "" {
+	if e.Queue == "" {
 		return response("", http.StatusBadRequest, errors.New("got empty SQS name"))
 	}
 
-	queueURL := fmt.Sprintf("%s/%s", awsEndpoint, event.Queue)
+	queueURL := fmt.Sprintf("%s/%s", awsEndpoint, e.Queue)
 
 	err = sendToQueue(sqsSession, queueURL)
 	if err != nil {
