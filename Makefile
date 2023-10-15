@@ -21,15 +21,13 @@ uninstall-aws-sam:
 	sudo -S rm /usr/local/bin/sam
 	sudo -S rm -rf /usr/local/aws-sam-cli
 
-install-aws-cli:
-	curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
-	sudo -S installer -pkg AWSCLIV2.pkg -target /
-	rm AWSCLIV2.pkg
-	aws --version
+localstack:
+	docker run --rm -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock --name localstack localstack/localstack
 
-uninstall-aws-cli:
-	which aws
-	ls -l /usr/local/bin/aws
-	sudo -S rm /usr/local/bin/aws
-	sudo -S rm /usr/local/bin/aws_completer
-	sudo -S rm -rf /usr/local/aws-cli
+include .env
+build-lambda:
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=auto \
+		go build -C lambda/put-message \
+		-ldflags "-X main.awsRegion=$(AWS_REGION) -X main.awsAccessKeyID=$(AWS_ACCESS_KEY_ID) -X main.awsSecretAccessKey=$(AWS_SECRET_ACCESS_KEY) -X main.awsEndpoint=$(AWS_ENDPOINT)" \
+		-o handler-bin
+	zip lambda/put-message/put-message.zip lambda/put-message/handler-bin
