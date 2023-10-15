@@ -15,7 +15,7 @@ func TestHandler(t *testing.T) {
 	t.Run("Failed request", func(t *testing.T) {
 		resp, err := handler(events.APIGatewayProxyRequest{})
 		if err != nil && err.Error() != "unexpected end of JSON input" {
-			t.Fatalf("Error failed to trigger with an invalid HTTP response: %v", resp)
+			t.Errorf("Error failed to trigger with an invalid HTTP response: %v", resp)
 		}
 	})
 
@@ -25,7 +25,7 @@ func TestHandler(t *testing.T) {
 		})
 
 		if err != nil {
-			t.Fatalf("Everything should be ok, but %s", err)
+			t.Error(err)
 		}
 	})
 }
