@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -23,26 +24,31 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	var e event
 	err := json.Unmarshal([]byte(request.Body), &e)
 	if err != nil {
+		log.Printf("got invalid HTTP request %s: %s\n", request.Body, err.Error())
 		return response(err.Error(), http.StatusInternalServerError, nil)
 	}
 
 	awsRegion := os.Getenv("AWS_REGION")
 	if awsRegion == "" {
+		log.Println("got empty AWS_REGION")
 		return response("got empty AWS_REGION", http.StatusBadRequest, nil)
 	}
 
 	awsAccessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
 	if awsAccessKeyID == "" {
+		log.Println("got empty AWS_ACCESS_KEY_ID")
 		return response("got empty AWS_ACCESS_KEY_ID", http.StatusBadRequest, nil)
 	}
 
 	awsSecretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
 	if awsSecretAccessKey == "" {
+		log.Println("got empty AWS_SECRET_ACCESS_KEY")
 		return response("got empty AWS_SECRET_ACCESS_KEY", http.StatusBadRequest, nil)
 	}
 
 	awsEndpoint := os.Getenv("AWS_ENDPOINT")
 	if awsEndpoint == "" {
+		log.Println("got empty AWS_ENDPOINT")
 		return response("got empty AWS_ENDPOINT", http.StatusBadRequest, nil)
 	}
 
@@ -63,6 +69,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	sqsSession := sqs.New(session.Must(awsSession, nil))
 
 	if e.Queue == "" {
+		log.Println("got empty SQS name")
 		return response("", http.StatusBadRequest, errors.New("got empty SQS name"))
 	}
 
@@ -70,10 +77,12 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	err = sendToQueue(sqsSession, queueURL)
 	if err != nil {
+		log.Printf("unable to put message: %s\n", err)
 		return response("unable to put message", http.StatusInternalServerError, err)
 	}
 
-	return response(fmt.Sprintf("successfully put message by QueueUrl: %s\n", queueURL), http.StatusOK, nil)
+	log.Printf("successfully put message into %s\n", queueURL)
+	return response(fmt.Sprintf("successfully put message into %s\n", queueURL), http.StatusOK, nil)
 }
 
 func main() {
