@@ -66,13 +66,12 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		panic(err)
 	}
 
-	sqsSession := sqs.New(session.Must(awsSession, nil))
-
 	if e.Queue == "" {
 		log.Println("got empty SQS name")
 		return response("", http.StatusBadRequest, errors.New("got empty SQS name"))
 	}
 
+	sqsSession := sqs.New(session.Must(awsSession, nil))
 	queueURL := fmt.Sprintf("%s/%s", awsEndpoint, e.Queue)
 
 	err = sendToQueue(sqsSession, queueURL)
