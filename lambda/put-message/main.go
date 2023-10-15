@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -31,6 +32,7 @@ var (
 
 func handler(event Event) (Response, error) {
 	if event.Queue == "" {
+		log.Println("got empty SQS name")
 		return response("", http.StatusBadRequest, errors.New("got empty SQS name"))
 	}
 
@@ -74,15 +76,16 @@ func handler(event Event) (Response, error) {
 	}
 
 	sqsSession := sqs.New(session.Must(awsSession, nil))
-
 	queueURL := fmt.Sprintf("%s/%s", awsEndpoint, event.Queue)
 
 	err = sendToQueue(sqsSession, queueURL)
 	if err != nil {
+		log.Printf("unable to put message: %s\n", err)
 		return response("unable to put message", http.StatusInternalServerError, err)
 	}
 
-	return response(fmt.Sprintf("successfully put message by QueueUrl: %s", queueURL), http.StatusOK, nil)
+	log.Printf("successfully put message into %s\n", queueURL)
+	return response(fmt.Sprintf("successfully put message into %s", queueURL), http.StatusOK, nil)
 }
 
 func main() {
