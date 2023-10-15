@@ -1,5 +1,7 @@
 ### Run **PutMessageApi** function.
 
+⚠️ SQS must be created before.
+
 - build function:
 ```
 sam build PutMessageApi
