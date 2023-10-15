@@ -1,6 +1,6 @@
 ### Run **PutMessageApi** function.
 
-⚠️ SQS must be created before.
+⚠️ SQS queue must be created before.
 
 - build function:
 ```
