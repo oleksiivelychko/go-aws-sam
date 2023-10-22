@@ -4,7 +4,7 @@ version = 0.1
 
 [default]
 [default.global.parameters]
-stack_name = "gp-aws-sam"
+stack_name = "go-aws-sam"
 
 [default.build.parameters]
 cached = true
