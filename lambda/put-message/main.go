@@ -32,8 +32,8 @@ var (
 
 func handler(event Event) (Response, error) {
 	if event.Queue == "" {
-		log.Println("got empty SQS name")
-		return response("", http.StatusBadRequest, errors.New("got empty SQS name"))
+		log.Println("got empty queue name")
+		return response("", http.StatusBadRequest, errors.New("got empty queue name"))
 	}
 
 	if awsRegion == "" {

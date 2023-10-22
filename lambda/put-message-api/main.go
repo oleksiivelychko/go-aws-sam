@@ -67,8 +67,8 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}
 
 	if e.Queue == "" {
-		log.Println("got empty SQS name")
-		return response("", http.StatusBadRequest, errors.New("got empty SQS name"))
+		log.Println("got empty queue name")
+		return response("", http.StatusBadRequest, errors.New("got empty queue name"))
 	}
 
 	sqsSession := sqs.New(session.Must(awsSession, nil))
