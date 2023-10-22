@@ -10,7 +10,7 @@ sam local generate-event sqs receive-message --body 'Hello, World!' | sam local 
 ```
 ---
 
-- debug function:
+- debug function (`delve` package must be installed):
 ```
 sam local invoke PopMessage -e events/event.json -d 2345 --debugger-path=delve --debug-args="-delveAPI=2" --debug
 ```
