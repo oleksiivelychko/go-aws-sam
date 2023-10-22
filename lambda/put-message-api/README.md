@@ -1,6 +1,6 @@
 ### Run **PutMessageApi** function.
 
-⚠️ SQS queue must be created before.
+⚠️ Queue **MyQueue** must be created before.
 
 - build function:
 ```
@@ -8,7 +8,7 @@ sam build PutMessageApi
 ```
 - start local API:
 ```
-sam local start-api
+sam local start-api --skip-pull-image
 ```
 - send request to invoke function:
 ```
