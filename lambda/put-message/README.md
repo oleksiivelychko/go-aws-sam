@@ -8,6 +8,6 @@ sam build PutMessage
 ```
 - invoke function:
 ```
-sam local invoke PutMessage -e events/event.json
+sam local invoke PutMessage -e events/event.json --skip-pull-image
 ```
     
