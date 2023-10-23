@@ -7,7 +7,7 @@
 docker run --rm -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock --name localstack localstack/localstack
 aws sqs create-queue --queue-name MyQueue --endpoint-url http://localhost:4566 --profile localstack
 ```
-
+---
 📌 Run **PutMessageApi** function
 - build function and start local API
 ```
@@ -19,26 +19,22 @@ sam local start-api --skip-pull-image
 curl -X POST -d '{"queue":"000000000000/MyQueue"}' http://127.0.0.1:3000/api/put-message
 ```
 ---
-
 📌 Run **PutMessage** function
 ```
 sam build PutMessage
 sam local invoke PutMessage -e events/event.json --skip-pull-image
 ```
 ---
-
 📌 Run **PopMessage** function
 ```
 sam build PopMessage
 sam local generate-event sqs receive-message --body 'Hello, World!' | sam local invoke -e - PopMessage
 ```
 ---
-
 📎 Create a new SAM configuration
 ```
 sam init --runtime go1.x
 ```
-
-🐞 Debugging SAM on Apple M1 has bug https://github.com/aws/aws-toolkit-jetbrains/issues/3061
-
+---
 ![SAM IDE configuration](sam_ide_run_configuration.png)
+🐞 Debugging SAM on Apple M1 has bug https://github.com/aws/aws-toolkit-jetbrains/issues/3061
