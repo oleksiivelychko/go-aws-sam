@@ -1,6 +1,6 @@
 ### Run **PutMessage** function.
 
-⚠️ SQS queue must be created before.
+⚠️ Queue **MyQueue** must be created before.
 
 - build function:
 ```
