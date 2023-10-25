@@ -1,3 +1,5 @@
 /.idea
 /.aws-sam
 volume
+handler-bin
+*.zip
