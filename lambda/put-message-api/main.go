@@ -4,64 +4,65 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	"log"
-	"net/http"
-	"os"
-	"time"
 )
 
 type event struct {
 	Queue string `json:"queue"`
 }
 
-func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var e event
-	err := json.Unmarshal([]byte(request.Body), &e)
+	err := json.Unmarshal([]byte(req.Body), &e)
 	if err != nil {
-		log.Printf("got invalid HTTP request %s: %s\n", request.Body, err.Error())
+		log.Printf("got invalid HTTP request %s: %s\n", req.Body, err.Error())
 		return response(err.Error(), http.StatusInternalServerError, nil)
 	}
 
-	awsRegion := os.Getenv("AWS_REGION")
-	if awsRegion == "" {
+	region := os.Getenv("AWS_REGION")
+	if region == "" {
 		log.Println("got empty AWS_REGION")
 		return response("got empty AWS_REGION", http.StatusBadRequest, nil)
 	}
 
-	awsAccessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
-	if awsAccessKeyID == "" {
+	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
+	if accessKeyID == "" {
 		log.Println("got empty AWS_ACCESS_KEY_ID")
 		return response("got empty AWS_ACCESS_KEY_ID", http.StatusBadRequest, nil)
 	}
 
-	awsSecretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
-	if awsSecretAccessKey == "" {
+	secretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
+	if secretAccessKey == "" {
 		log.Println("got empty AWS_SECRET_ACCESS_KEY")
 		return response("got empty AWS_SECRET_ACCESS_KEY", http.StatusBadRequest, nil)
 	}
 
-	awsEndpoint := os.Getenv("AWS_ENDPOINT")
-	if awsEndpoint == "" {
+	endpoint := os.Getenv("AWS_ENDPOINT")
+	if endpoint == "" {
 		log.Println("got empty AWS_ENDPOINT")
 		return response("got empty AWS_ENDPOINT", http.StatusBadRequest, nil)
 	}
 
-	awsCfg := &aws.Config{
-		Region:      aws.String(awsRegion),
-		Credentials: credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, ""),
+	config := &aws.Config{
+		Region:      aws.String(region),
+		Credentials: credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""),
 	}
 
-	if awsEndpoint != "" {
-		awsCfg.Endpoint = aws.String(awsEndpoint)
+	if endpoint != "" {
+		config.Endpoint = aws.String(endpoint)
 	}
 
-	awsSession, err := session.NewSession(awsCfg)
+	awsSession, err := session.NewSession(config)
 	if err != nil {
 		panic(err)
 	}
@@ -72,7 +73,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}
 
 	sqsSession := sqs.New(session.Must(awsSession, nil))
-	queueURL := fmt.Sprintf("%s/%s", awsEndpoint, e.Queue)
+	queueURL := fmt.Sprintf("%s/%s", endpoint, e.Queue)
 
 	err = sendToQueue(sqsSession, queueURL)
 	if err != nil {
@@ -88,7 +89,7 @@ func main() {
 	lambda.Start(handler)
 }
 
-func sendToQueue(sqsSession *sqs.SQS, queueURL string) error {
+func sendToQueue(sqsSession *sqs.SQS, url string) error {
 	_, err := sqsSession.SendMessage(&sqs.SendMessageInput{
 		MessageAttributes: map[string]*sqs.MessageAttributeValue{
 			"MyAttr": {
@@ -97,15 +98,15 @@ func sendToQueue(sqsSession *sqs.SQS, queueURL string) error {
 			},
 		},
 		MessageBody: aws.String("Got new event!"),
-		QueueUrl:    aws.String(queueURL),
+		QueueUrl:    aws.String(url),
 	})
 
 	return err
 }
 
-func response(body string, statusCode int, err error) (events.APIGatewayProxyResponse, error) {
+func response(body string, code int, err error) (events.APIGatewayProxyResponse, error) {
 	return events.APIGatewayProxyResponse{
 		Body:       body,
-		StatusCode: statusCode,
+		StatusCode: code,
 	}, err
 }

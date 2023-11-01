@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
-func handler(ctx context.Context, sqsEvent events.SQSEvent) {
-	for _, message := range sqsEvent.Records {
-		printMessage(message)
+func handler(ctx context.Context, e events.SQSEvent) {
+	for _, m := range e.Records {
+		printMessage(m)
 	}
 }
 
@@ -17,14 +18,14 @@ func main() {
 	lambda.Start(handler)
 }
 
-func printMessage(message events.SQSMessage) {
-	attr, ok := message.MessageAttributes["MyAttr"]
+func printMessage(m events.SQSMessage) {
+	attr, ok := m.MessageAttributes["MyAttr"]
 	if ok {
 		fmt.Printf(
 			"\nMessage ID %s for event source %s contains body `%s` with attribute 'MyAttr'=`%s`\n",
-			message.MessageId,
-			message.EventSource,
-			message.Body,
+			m.MessageId,
+			m.EventSource,
+			m.Body,
 			*attr.StringValue,
 		)
 		return
@@ -32,8 +33,8 @@ func printMessage(message events.SQSMessage) {
 
 	fmt.Printf(
 		"\nMessage ID %s for event source %s contains body `%s`\n",
-		message.MessageId,
-		message.EventSource,
-		message.Body,
+		m.MessageId,
+		m.EventSource,
+		m.Body,
 	)
 }

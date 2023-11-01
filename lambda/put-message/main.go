@@ -3,22 +3,23 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	"log"
-	"net/http"
-	"os"
-	"time"
 )
 
-type Event struct {
+type event struct {
 	Queue string `json:"queue"`
 }
 
-type Response struct {
+type response struct {
 	Body       string `json:"body"`
 	StatusCode int    `json:"statusCode"`
 }
@@ -30,10 +31,10 @@ var (
 	awsEndpoint        string
 )
 
-func handler(event Event) (Response, error) {
-	if event.Queue == "" {
+func handler(e event) (response, error) {
+	if e.Queue == "" {
 		log.Println("got empty queue name")
-		return response("", http.StatusBadRequest, errors.New("got empty queue name"))
+		return newResponse("", http.StatusBadRequest, errors.New("got empty queue name"))
 	}
 
 	if awsRegion == "" {
@@ -76,23 +77,23 @@ func handler(event Event) (Response, error) {
 	}
 
 	sqsSession := sqs.New(session.Must(awsSession, nil))
-	queueURL := fmt.Sprintf("%s/%s", awsEndpoint, event.Queue)
+	queueURL := fmt.Sprintf("%s/%s", awsEndpoint, e.Queue)
 
 	err = sendToQueue(sqsSession, queueURL)
 	if err != nil {
 		log.Printf("unable to put message: %s\n", err)
-		return response("unable to put message", http.StatusInternalServerError, err)
+		return newResponse("unable to put message", http.StatusInternalServerError, err)
 	}
 
 	log.Printf("successfully put message into %s\n", queueURL)
-	return response(fmt.Sprintf("successfully put message into %s", queueURL), http.StatusOK, nil)
+	return newResponse(fmt.Sprintf("successfully put message into %s", queueURL), http.StatusOK, nil)
 }
 
 func main() {
 	lambda.Start(handler)
 }
 
-func sendToQueue(sqsSession *sqs.SQS, queueURL string) error {
+func sendToQueue(sqsSession *sqs.SQS, url string) error {
 	_, err := sqsSession.SendMessage(&sqs.SendMessageInput{
 		MessageAttributes: map[string]*sqs.MessageAttributeValue{
 			"MyAttr": {
@@ -101,15 +102,15 @@ func sendToQueue(sqsSession *sqs.SQS, queueURL string) error {
 			},
 		},
 		MessageBody: aws.String("Got new event!"),
-		QueueUrl:    aws.String(queueURL),
+		QueueUrl:    aws.String(url),
 	})
 
 	return err
 }
 
-func response(content string, status int, err error) (Response, error) {
-	return Response{
-		Body:       content,
-		StatusCode: status,
+func newResponse(body string, code int, err error) (response, error) {
+	return response{
+		Body:       body,
+		StatusCode: code,
 	}, err
 }
