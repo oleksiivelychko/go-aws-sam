@@ -2,7 +2,7 @@
 
 ### Running AWS Serverless Application Model (SAM).
 
-⚠️ Run **LocalStack** and create **MyQueue**
+⚠️ Run [LocalStack](docker-compose.yaml) and create **MyQueue**
 ```
 aws sqs create-queue --queue-name MyQueue --endpoint-url http://localhost:4566 --profile localstack
 ```
