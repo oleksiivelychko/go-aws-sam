@@ -1,7 +1,7 @@
 include .env
 
 # https://github.com/aws/aws-sam-cli/releases/
-awsSamCliSha256Sum := 985c673d317f773cdecfb92fce9c658c4ddfc50ee0ad7927b9654ee6985962f0
+awsSamCliSha256Sum := 604dca05d13dac09e8343b8099c19fe844d74cda6ff065e622717f09f7cd59de
 
 download-aws-sam:
 	wget -O AWS-SAM-CLI.pkg https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-macos-arm64.pkg
