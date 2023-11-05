@@ -27,7 +27,7 @@ sam local invoke PutMessage -e events/event.json --skip-pull-image
 📌 Run **PopMessage** function
 ```
 sam build PopMessage
-sam local generate-event sqs receive-message --body 'Hello, World!' | sam local invoke -e - PopMessage
+sam local generate-event sqs receive-message --body 'Hello, World!' | sam local invoke -e - PopMessage --skip-pull-image
 ```
 ---
 📎 Create a new SAM configuration
