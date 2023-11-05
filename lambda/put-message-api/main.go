@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,35 +21,36 @@ type event struct {
 }
 
 func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	var e event
-	err := json.Unmarshal([]byte(req.Body), &e)
-	if err != nil {
-		log.Printf("got invalid HTTP request %s: %s\n", req.Body, err.Error())
-		return response(err.Error(), http.StatusInternalServerError, nil)
-	}
-
 	region := os.Getenv("AWS_REGION")
 	if region == "" {
-		log.Println("got empty AWS_REGION")
-		return response("got empty AWS_REGION", http.StatusBadRequest, nil)
+		log.Println("empty AWS_REGION")
+		return response(fmt.Sprintf("empty AWS_REGION\n"), http.StatusBadRequest)
 	}
 
 	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
 	if accessKeyID == "" {
-		log.Println("got empty AWS_ACCESS_KEY_ID")
-		return response("got empty AWS_ACCESS_KEY_ID", http.StatusBadRequest, nil)
+		log.Println("empty AWS_ACCESS_KEY_ID")
+		return response(fmt.Sprintf("empty AWS_ACCESS_KEY_ID\n"), http.StatusBadRequest)
 	}
 
 	secretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
 	if secretAccessKey == "" {
-		log.Println("got empty AWS_SECRET_ACCESS_KEY")
-		return response("got empty AWS_SECRET_ACCESS_KEY", http.StatusBadRequest, nil)
+		log.Println("empty AWS_SECRET_ACCESS_KEY")
+		return response(fmt.Sprintf("empty AWS_SECRET_ACCESS_KEY\n"), http.StatusBadRequest)
 	}
 
 	endpoint := os.Getenv("AWS_ENDPOINT")
 	if endpoint == "" {
-		log.Println("got empty AWS_ENDPOINT")
-		return response("got empty AWS_ENDPOINT", http.StatusBadRequest, nil)
+		log.Println("empty AWS_ENDPOINT")
+		return response(fmt.Sprintf("empty AWS_ENDPOINT\n"), http.StatusBadRequest)
+	}
+
+	var e event
+
+	err := json.Unmarshal([]byte(req.Body), &e)
+	if err != nil {
+		log.Printf("%s: %s", err, req.Body)
+		return response(fmt.Sprintf("%s: %s\n", err, req.Body), http.StatusBadRequest)
 	}
 
 	config := &aws.Config{
@@ -68,45 +68,42 @@ func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse,
 	}
 
 	if e.Queue == "" {
-		log.Println("got empty queue name")
-		return response("", http.StatusBadRequest, errors.New("got empty queue name"))
+		log.Println("empty queue parameter")
+		return response(fmt.Sprintf("empty queue parameter\n"), http.StatusBadRequest)
 	}
 
-	sqsSession := sqs.New(session.Must(awsSession, nil))
 	queueURL := fmt.Sprintf("%s/%s", endpoint, e.Queue)
 
-	err = sendToQueue(sqsSession, queueURL)
+	err = sendToQueue(sqs.New(session.Must(awsSession, nil)), queueURL)
 	if err != nil {
-		log.Printf("unable to put message: %s\n", err)
-		return response("unable to put message", http.StatusInternalServerError, err)
+		log.Printf(err.Error())
+		return response(fmt.Sprintf("empty queue parameter: %s\n", err), http.StatusInternalServerError)
 	}
 
-	log.Printf("successfully put message into %s\n", queueURL)
-	return response(fmt.Sprintf("successfully put message into %s\n", queueURL), http.StatusOK, nil)
+	log.Printf("message was put into %s", queueURL)
+	return response(fmt.Sprintf("message was put into %s\n", queueURL), http.StatusOK)
 }
 
-func main() {
-	lambda.Start(handler)
-}
+func main() { lambda.Start(handler) }
 
 func sendToQueue(sqsSession *sqs.SQS, url string) error {
 	_, err := sqsSession.SendMessage(&sqs.SendMessageInput{
 		MessageAttributes: map[string]*sqs.MessageAttributeValue{
 			"MyAttr": {
 				DataType:    aws.String("String"),
-				StringValue: aws.String(fmt.Sprintf("Time now is %s", time.Now().Format(time.DateTime))),
+				StringValue: aws.String(fmt.Sprintf("Time is %s", time.Now().Format(time.DateTime))),
 			},
 		},
-		MessageBody: aws.String("Got new event!"),
+		MessageBody: aws.String("New event!"),
 		QueueUrl:    aws.String(url),
 	})
 
 	return err
 }
 
-func response(body string, code int, err error) (events.APIGatewayProxyResponse, error) {
+func response(body string, code int) (events.APIGatewayProxyResponse, error) {
 	return events.APIGatewayProxyResponse{
 		Body:       body,
 		StatusCode: code,
-	}, err
+	}, nil
 }
