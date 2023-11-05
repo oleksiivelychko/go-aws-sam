@@ -32,34 +32,41 @@ var (
 )
 
 func handler(e event) (response, error) {
-	if e.Queue == "" {
-		log.Println("got empty queue name")
-		return newResponse("", http.StatusBadRequest, errors.New("got empty queue name"))
-	}
-
 	if awsRegion == "" {
 		awsRegion = os.Getenv("AWS_REGION")
 		if awsRegion == "" {
-			panic("got empty AWS_REGION")
+			log.Print("empty AWS_REGION")
+			return newResponse(fmt.Sprintf("empty AWS_REGION"), http.StatusBadRequest, errors.New("empty AWS_REGION"))
 		}
 	}
+
 	if awsAccessKeyID == "" {
 		awsAccessKeyID = os.Getenv("AWS_ACCESS_KEY_ID")
 		if awsAccessKeyID == "" {
-			panic("got empty AWS_ACCESS_KEY_ID")
+			log.Print("empty AWS_ACCESS_KEY_ID")
+			return newResponse(fmt.Sprintf("empty AWS_ACCESS_KEY_ID"), http.StatusBadRequest, errors.New("empty AWS_ACCESS_KEY_ID"))
 		}
 	}
+
 	if awsSecretAccessKey == "" {
 		awsSecretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
 		if awsSecretAccessKey == "" {
-			panic("got empty AWS_SECRET_ACCESS_KEY")
+			log.Print("empty AWS_SECRET_ACCESS_KEY")
+			return newResponse(fmt.Sprintf("empty AWS_SECRET_ACCESS_KEY"), http.StatusBadRequest, errors.New("empty AWS_SECRET_ACCESS_KEY"))
 		}
 	}
+
 	if awsEndpoint == "" {
 		awsEndpoint = os.Getenv("AWS_ENDPOINT")
 		if awsEndpoint == "" {
-			panic("got empty AWS_ENDPOINT")
+			log.Print("empty AWS_ENDPOINT")
+			return newResponse(fmt.Sprintf("empty AWS_ENDPOINT"), http.StatusBadRequest, errors.New("empty AWS_ENDPOINT"))
 		}
+	}
+
+	if e.Queue == "" {
+		log.Println("empty queue parameter")
+		return newResponse(fmt.Sprintf("empty queue parameter"), http.StatusBadRequest, errors.New("empty queue parameter"))
 	}
 
 	config := &aws.Config{
@@ -73,35 +80,32 @@ func handler(e event) (response, error) {
 
 	awsSession, err := session.NewSession(config)
 	if err != nil {
-		panic(err)
+		return newResponse(err.Error(), http.StatusInternalServerError, err)
 	}
 
-	sqsSession := sqs.New(session.Must(awsSession, nil))
 	queueURL := fmt.Sprintf("%s/%s", awsEndpoint, e.Queue)
 
-	err = sendToQueue(sqsSession, queueURL)
+	err = sendToQueue(sqs.New(session.Must(awsSession, nil)), queueURL)
 	if err != nil {
-		log.Printf("unable to put message: %s\n", err)
-		return newResponse("unable to put message", http.StatusInternalServerError, err)
+		log.Print(err)
+		return newResponse(fmt.Sprintf("%s", err), http.StatusInternalServerError, err)
 	}
 
-	log.Printf("successfully put message into %s\n", queueURL)
-	return newResponse(fmt.Sprintf("successfully put message into %s", queueURL), http.StatusOK, nil)
+	log.Printf("message was put into %s", queueURL)
+	return newResponse(fmt.Sprintf("message was put into %s", queueURL), http.StatusOK, nil)
 }
 
-func main() {
-	lambda.Start(handler)
-}
+func main() { lambda.Start(handler) }
 
 func sendToQueue(sqsSession *sqs.SQS, url string) error {
 	_, err := sqsSession.SendMessage(&sqs.SendMessageInput{
 		MessageAttributes: map[string]*sqs.MessageAttributeValue{
 			"MyAttr": {
 				DataType:    aws.String("String"),
-				StringValue: aws.String(fmt.Sprintf("Time now is %s", time.Now().Format(time.DateTime))),
+				StringValue: aws.String(fmt.Sprintf("Time is %s", time.Now().Format(time.DateTime))),
 			},
 		},
-		MessageBody: aws.String("Got new event!"),
+		MessageBody: aws.String("New event!"),
 		QueueUrl:    aws.String(url),
 	})
 
