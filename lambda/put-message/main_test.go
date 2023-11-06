@@ -1,8 +1,6 @@
 package main
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestHandler(t *testing.T) {
 	awsRegion = "us-east-1"
