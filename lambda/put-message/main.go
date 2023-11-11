@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -16,6 +17,7 @@ import (
 )
 
 type event struct {
+	Body  string `json:"body"`
 	Queue string `json:"queue"`
 }
 
@@ -31,42 +33,16 @@ var (
 	awsEndpoint        string
 )
 
-func handler(e event) (response, error) {
-	if awsRegion == "" {
-		awsRegion = os.Getenv("AWS_REGION")
-		if awsRegion == "" {
-			log.Print("empty AWS_REGION")
-			return newResponse(fmt.Sprintf("empty AWS_REGION"), http.StatusBadRequest, errors.New("empty AWS_REGION"))
-		}
+func handler(e *event) (response, error) {
+	if err := validateAWS(); err != nil {
+		log.Print(err)
+		return newResponse(err.Error(), http.StatusBadRequest, err)
 	}
 
-	if awsAccessKeyID == "" {
-		awsAccessKeyID = os.Getenv("AWS_ACCESS_KEY_ID")
-		if awsAccessKeyID == "" {
-			log.Print("empty AWS_ACCESS_KEY_ID")
-			return newResponse(fmt.Sprintf("empty AWS_ACCESS_KEY_ID"), http.StatusBadRequest, errors.New("empty AWS_ACCESS_KEY_ID"))
-		}
-	}
-
-	if awsSecretAccessKey == "" {
-		awsSecretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
-		if awsSecretAccessKey == "" {
-			log.Print("empty AWS_SECRET_ACCESS_KEY")
-			return newResponse(fmt.Sprintf("empty AWS_SECRET_ACCESS_KEY"), http.StatusBadRequest, errors.New("empty AWS_SECRET_ACCESS_KEY"))
-		}
-	}
-
-	if awsEndpoint == "" {
-		awsEndpoint = os.Getenv("AWS_ENDPOINT")
-		if awsEndpoint == "" {
-			log.Print("empty AWS_ENDPOINT")
-			return newResponse(fmt.Sprintf("empty AWS_ENDPOINT"), http.StatusBadRequest, errors.New("empty AWS_ENDPOINT"))
-		}
-	}
-
-	if e.Queue == "" {
-		log.Println("empty queue parameter")
-		return newResponse(fmt.Sprintf("empty queue parameter"), http.StatusBadRequest, errors.New("empty queue parameter"))
+	queue, err := parseQueueParam(e)
+	if err != nil {
+		log.Print(err)
+		return newResponse(err.Error(), http.StatusBadRequest, err)
 	}
 
 	config := &aws.Config{
@@ -83,7 +59,7 @@ func handler(e event) (response, error) {
 		return newResponse(err.Error(), http.StatusInternalServerError, err)
 	}
 
-	queueURL := fmt.Sprintf("%s/%s", awsEndpoint, e.Queue)
+	queueURL := fmt.Sprintf("%s/%s", awsEndpoint, queue)
 
 	err = sendToQueue(sqs.New(session.Must(awsSession, nil)), queueURL)
 	if err != nil {
@@ -92,7 +68,7 @@ func handler(e event) (response, error) {
 	}
 
 	log.Printf("message was put into %s", queueURL)
-	return newResponse(fmt.Sprintf("message was put into %s", queueURL), http.StatusOK, nil)
+	return newResponse(fmt.Sprintf("message was put into %s\n", queueURL), http.StatusOK, nil)
 }
 
 func main() { lambda.Start(handler) }
@@ -117,4 +93,60 @@ func newResponse(body string, code int, err error) (response, error) {
 		Body:       body,
 		StatusCode: code,
 	}, err
+}
+
+func parseQueueParam(e *event) (string, error) {
+	if e == nil {
+		return "", errors.New("received nil event")
+	}
+
+	if e.Queue != "" {
+		return e.Queue, nil
+	}
+
+	if e.Body == "" {
+		return "", errors.New("empty body of request")
+
+	}
+
+	body := &event{}
+
+	if err := json.Unmarshal([]byte(e.Body), body); err != nil {
+		return "", err
+
+	}
+
+	return body.Queue, nil
+}
+
+func validateAWS() error {
+	if awsRegion == "" {
+		awsRegion = os.Getenv("AWS_REGION")
+		if awsRegion == "" {
+			return errors.New("empty AWS_REGION")
+		}
+	}
+
+	if awsAccessKeyID == "" {
+		awsAccessKeyID = os.Getenv("AWS_ACCESS_KEY_ID")
+		if awsAccessKeyID == "" {
+			return errors.New("empty AWS_ACCESS_KEY_ID")
+		}
+	}
+
+	if awsSecretAccessKey == "" {
+		awsSecretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
+		if awsSecretAccessKey == "" {
+			return errors.New("empty AWS_SECRET_ACCESS_KEY")
+		}
+	}
+
+	if awsEndpoint == "" {
+		awsEndpoint = os.Getenv("AWS_ENDPOINT")
+		if awsEndpoint == "" {
+			return errors.New("empty AWS_ENDPOINT")
+		}
+	}
+
+	return nil
 }
