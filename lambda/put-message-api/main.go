@@ -47,8 +47,7 @@ func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse,
 
 	var e event
 
-	err := json.Unmarshal([]byte(req.Body), &e)
-	if err != nil {
+	if err := json.Unmarshal([]byte(req.Body), &e); err != nil {
 		log.Printf("%s: %s", err, req.Body)
 		return response(fmt.Sprintf("%s: %s\n", err, req.Body), http.StatusBadRequest)
 	}
