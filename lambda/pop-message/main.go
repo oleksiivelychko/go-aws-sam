@@ -17,8 +17,7 @@ func handler(ctx context.Context, e events.SQSEvent) {
 func main() { lambda.Start(handler) }
 
 func printMessage(m events.SQSMessage) {
-	attr, ok := m.MessageAttributes["MyAttr"]
-	if ok {
+	if attr, ok := m.MessageAttributes["MyAttr"]; ok {
 		fmt.Printf(
 			"\nMessage %q of event source %q contains body %q, 'MyAttr' %q\n",
 			m.MessageId,
