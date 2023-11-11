@@ -23,9 +23,15 @@ uninstall-aws-sam:
 	sudo -S rm /usr/local/bin/sam
 	sudo -S rm -rf /usr/local/aws-sam-cli
 
-build-lambda:
+build-put-message:
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=auto \
 		go build -C lambda/put-message \
 		-ldflags "-X main.awsRegion=$(AWS_REGION) -X main.awsAccessKeyID=$(AWS_ACCESS_KEY_ID) -X main.awsSecretAccessKey=$(AWS_SECRET_ACCESS_KEY) -X main.awsEndpoint=$(AWS_ENDPOINT)" \
 		-o handler-bin
 	zip -jrm lambda/put-message/put-message.zip lambda/put-message/handler-bin
+
+build-pop-message:
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=auto \
+		go build -C lambda/pop-message \
+		-o handler-bin
+	zip -jrm lambda/pop-message/pop-message.zip lambda/pop-message/handler-bin
